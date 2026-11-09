@@ -1,10 +1,10 @@
-// Lista em memória com os alunos cadastrados (instâncias de Aluno).
+// todos os alunos cadastrados ficam aqui
 const alunos = [];
 
-// Aluno carregado no formulário para edição (null quando é um novo cadastro).
+// aluno que está sendo editado (null = cadastro novo)
 let alunoEmEdicao = null;
 
-// Função do relatório em exibição, usada para mantê-lo atualizado com os dados.
+// guarda qual relatório está aberto pra ele atualizar sozinho
 let relatorioAtual = null;
 
 const formulario = document.getElementById('formulario-aluno');
@@ -23,7 +23,7 @@ const notificar = (mensagem) => {
   alert(mensagem);
 };
 
-// Operações de manipulação dos dados
+// funções que mexem no array
 
 const lerFormulario = () => new Aluno(
   campoNome.value.trim(),
@@ -38,7 +38,7 @@ const atualizarAluno = (atual, novo) => alunos.splice(alunos.indexOf(atual), 1, 
 
 const removerAluno = (aluno) => alunos.splice(alunos.indexOf(aluno), 1);
 
-// Formulário
+// formulário
 
 const limparFormulario = () => {
   formulario.reset();
@@ -59,7 +59,7 @@ const carregarNoFormulario = (aluno) => {
   campoNome.focus();
 };
 
-// Tabela
+// tabela
 
 const criarCelula = (texto) => {
   const celula = document.createElement('td');
@@ -76,7 +76,7 @@ const criarBotao = (rotulo, aoClicar) => {
 };
 
 const renderizarTabela = () => {
-  corpoTabela.replaceChildren();
+  corpoTabela.innerHTML = '';
 
   if (alunos.length === 0) {
     const celula = criarCelula('Nenhum aluno cadastrado.');
@@ -112,7 +112,7 @@ const renderizarTabela = () => {
   });
 };
 
-// Relatórios: cada função devolve o título e as linhas a exibir
+// relatórios
 
 const calcularMedia = (campo) => {
   if (alunos.length === 0) {
@@ -120,7 +120,7 @@ const calcularMedia = (campo) => {
   }
   const soma = alunos.reduce((total, aluno) => total + aluno[campo], 0);
   const media = soma / alunos.length;
-  return [media.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })];
+  return [media.toFixed(2)];
 };
 
 const relatorioAprovados = () => ({
@@ -151,7 +151,11 @@ const relatorioPorCurso = () => {
 
   return {
     titulo: 'Quantidade de alunos por curso',
-    linhas: Object.entries(totais).map(([curso, quantidade]) => `${curso}: ${quantidade}`),
+    linhas: [
+      `JavaScript: ${totais.JavaScript}`,
+      `Python: ${totais.Python}`,
+      `Java: ${totais.Java}`,
+    ],
   };
 };
 
@@ -160,11 +164,16 @@ const renderizarRelatorio = () => {
     return;
   }
 
-  const { titulo, linhas } = relatorioAtual();
-  tituloRelatorio.textContent = titulo;
-  listaRelatorio.replaceChildren();
+  const relatorio = relatorioAtual();
+  tituloRelatorio.textContent = relatorio.titulo;
+  listaRelatorio.innerHTML = '';
 
-  (linhas.length > 0 ? linhas : ['Nenhum dado para exibir.']).forEach((linha) => {
+  if (relatorio.linhas.length === 0) {
+    listaRelatorio.innerHTML = '<li>Nenhum dado para exibir.</li>';
+    return;
+  }
+
+  relatorio.linhas.forEach((linha) => {
     const item = document.createElement('li');
     item.textContent = linha;
     listaRelatorio.appendChild(item);
@@ -176,14 +185,20 @@ const atualizarTela = () => {
   renderizarRelatorio();
 };
 
-// Eventos dos botões do formulário
+// botões do formulário
 
 botaoSalvar.addEventListener('click', function (evento) {
-  // Com dados inválidos, o próprio navegador exibe as mensagens de validação.
+  // se tiver campo errado deixa o navegador avisar
   if (!formulario.checkValidity()) {
     return;
   }
   evento.preventDefault();
+
+  // o required deixa passar nome só com espaços
+  if (campoNome.value.trim() === '') {
+    alert('Informe o nome do aluno.');
+    return;
+  }
 
   const aluno = lerFormulario();
   let mensagem;
@@ -204,19 +219,31 @@ botaoCancelar.addEventListener('click', function () {
   limparFormulario();
 });
 
-// Eventos dos botões de relatório
+// botões dos relatórios
 
-[
-  ['botao-aprovados', relatorioAprovados],
-  ['botao-media-notas', relatorioMediaNotas],
-  ['botao-media-idades', relatorioMediaIdades],
-  ['botao-nomes', relatorioNomes],
-  ['botao-por-curso', relatorioPorCurso],
-].forEach(([id, relatorio]) => {
-  document.getElementById(id).addEventListener('click', function () {
-    relatorioAtual = relatorio;
-    renderizarRelatorio();
-  });
+const abrirRelatorio = (relatorio) => {
+  relatorioAtual = relatorio;
+  renderizarRelatorio();
+};
+
+document.getElementById('botao-aprovados').addEventListener('click', function () {
+  abrirRelatorio(relatorioAprovados);
+});
+
+document.getElementById('botao-media-notas').addEventListener('click', function () {
+  abrirRelatorio(relatorioMediaNotas);
+});
+
+document.getElementById('botao-media-idades').addEventListener('click', function () {
+  abrirRelatorio(relatorioMediaIdades);
+});
+
+document.getElementById('botao-nomes').addEventListener('click', function () {
+  abrirRelatorio(relatorioNomes);
+});
+
+document.getElementById('botao-por-curso').addEventListener('click', function () {
+  abrirRelatorio(relatorioPorCurso);
 });
 
 renderizarTabela();
