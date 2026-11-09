@@ -13,42 +13,36 @@ const botaoSalvar = document.getElementById('botao-salvar');
 const botaoCancelar = document.getElementById('botao-cancelar');
 const corpoTabela = document.getElementById('corpo-tabela');
 
-function lerFormulario() {
-  return new Aluno(
-    campoNome.value.trim(),
-    Number(campoIdade.value),
-    campoCurso.value,
-    Number(campoNota.value),
-  );
-}
+const notificar = (mensagem) => {
+  console.log(mensagem);
+  alert(mensagem);
+};
 
-function limparFormulario() {
+// Operações de manipulação dos dados
+
+const lerFormulario = () => new Aluno(
+  campoNome.value.trim(),
+  Number(campoIdade.value),
+  campoCurso.value,
+  Number(campoNota.value),
+);
+
+const adicionarAluno = (aluno) => alunos.push(aluno);
+
+const atualizarAluno = (atual, novo) => alunos.splice(alunos.indexOf(atual), 1, novo);
+
+const removerAluno = (aluno) => alunos.splice(alunos.indexOf(aluno), 1);
+
+// Formulário
+
+const limparFormulario = () => {
   formulario.reset();
   alunoEmEdicao = null;
   botaoSalvar.textContent = 'Cadastrar';
   botaoCancelar.hidden = true;
-}
+};
 
-function salvarAluno(evento) {
-  // Com dados inválidos, o próprio navegador exibe as mensagens de validação.
-  if (!formulario.checkValidity()) {
-    return;
-  }
-  evento.preventDefault();
-
-  const aluno = lerFormulario();
-  if (alunoEmEdicao === null) {
-    alunos.push(aluno);
-  } else {
-    alunos.splice(alunos.indexOf(alunoEmEdicao), 1, aluno);
-  }
-  console.log(aluno.toString());
-
-  limparFormulario();
-  renderizarTabela();
-}
-
-function editarAluno(aluno) {
+const carregarNoFormulario = (aluno) => {
   campoNome.value = aluno.nome;
   campoIdade.value = aluno.idade;
   campoCurso.value = aluno.curso;
@@ -58,32 +52,25 @@ function editarAluno(aluno) {
   botaoSalvar.textContent = 'Salvar alterações';
   botaoCancelar.hidden = false;
   campoNome.focus();
-}
+};
 
-function excluirAluno(aluno) {
-  alunos.splice(alunos.indexOf(aluno), 1);
+// Tabela
 
-  if (aluno === alunoEmEdicao) {
-    limparFormulario();
-  }
-  renderizarTabela();
-}
-
-function criarCelula(texto) {
+const criarCelula = (texto) => {
   const celula = document.createElement('td');
   celula.textContent = texto;
   return celula;
-}
+};
 
-function criarBotao(rotulo, aoClicar) {
+const criarBotao = (rotulo, aoClicar) => {
   const botao = document.createElement('button');
   botao.type = 'button';
   botao.textContent = rotulo;
-  botao.onclick = aoClicar;
+  botao.addEventListener('click', aoClicar);
   return botao;
-}
+};
 
-function renderizarTabela() {
+const renderizarTabela = () => {
   corpoTabela.replaceChildren();
 
   if (alunos.length === 0) {
@@ -95,10 +82,19 @@ function renderizarTabela() {
     return;
   }
 
-  for (const aluno of alunos) {
+  alunos.forEach((aluno) => {
     const acoes = document.createElement('td');
-    acoes.appendChild(criarBotao('Editar', function () { editarAluno(aluno); }));
-    acoes.appendChild(criarBotao('Excluir', function () { excluirAluno(aluno); }));
+    acoes.appendChild(criarBotao('Editar', function () {
+      carregarNoFormulario(aluno);
+    }));
+    acoes.appendChild(criarBotao('Excluir', function () {
+      removerAluno(aluno);
+      if (aluno === alunoEmEdicao) {
+        limparFormulario();
+      }
+      renderizarTabela();
+      notificar(`Aluno excluído: ${aluno.toString()}`);
+    }));
 
     const linha = document.createElement('tr');
     linha.appendChild(criarCelula(aluno.nome));
@@ -108,7 +104,35 @@ function renderizarTabela() {
     linha.appendChild(criarCelula(aluno.isAprovado() ? 'Aprovado' : 'Reprovado'));
     linha.appendChild(acoes);
     corpoTabela.appendChild(linha);
+  });
+};
+
+// Eventos dos botões do formulário
+
+botaoSalvar.addEventListener('click', function (evento) {
+  // Com dados inválidos, o próprio navegador exibe as mensagens de validação.
+  if (!formulario.checkValidity()) {
+    return;
   }
-}
+  evento.preventDefault();
+
+  const aluno = lerFormulario();
+  let mensagem;
+  if (alunoEmEdicao === null) {
+    adicionarAluno(aluno);
+    mensagem = `Aluno cadastrado: ${aluno.toString()}`;
+  } else {
+    atualizarAluno(alunoEmEdicao, aluno);
+    mensagem = `Aluno atualizado: ${aluno.toString()}`;
+  }
+
+  limparFormulario();
+  renderizarTabela();
+  notificar(mensagem);
+});
+
+botaoCancelar.addEventListener('click', function () {
+  limparFormulario();
+});
 
 renderizarTabela();
