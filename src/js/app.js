@@ -1,4 +1,4 @@
-// Lista em memória com os alunos cadastrados.
+// Lista em memória com os alunos cadastrados (instâncias de Aluno).
 const alunos = [];
 
 // Aluno carregado no formulário para edição (null quando é um novo cadastro).
@@ -14,12 +14,12 @@ const botaoCancelar = document.getElementById('botao-cancelar');
 const corpoTabela = document.getElementById('corpo-tabela');
 
 function lerFormulario() {
-  return {
-    nome: campoNome.value.trim(),
-    idade: Number(campoIdade.value),
-    curso: campoCurso.value,
-    notaFinal: Number(campoNota.value),
-  };
+  return new Aluno(
+    campoNome.value.trim(),
+    Number(campoIdade.value),
+    campoCurso.value,
+    Number(campoNota.value),
+  );
 }
 
 function limparFormulario() {
@@ -36,11 +36,13 @@ function salvarAluno(evento) {
   }
   evento.preventDefault();
 
+  const aluno = lerFormulario();
   if (alunoEmEdicao === null) {
-    alunos.push(lerFormulario());
+    alunos.push(aluno);
   } else {
-    alunos.splice(alunos.indexOf(alunoEmEdicao), 1, lerFormulario());
+    alunos.splice(alunos.indexOf(alunoEmEdicao), 1, aluno);
   }
+  console.log(aluno.toString());
 
   limparFormulario();
   renderizarTabela();
@@ -86,7 +88,7 @@ function renderizarTabela() {
 
   if (alunos.length === 0) {
     const celula = criarCelula('Nenhum aluno cadastrado.');
-    celula.colSpan = 5;
+    celula.colSpan = 6;
     const linha = document.createElement('tr');
     linha.appendChild(celula);
     corpoTabela.appendChild(linha);
@@ -103,6 +105,7 @@ function renderizarTabela() {
     linha.appendChild(criarCelula(aluno.idade));
     linha.appendChild(criarCelula(aluno.curso));
     linha.appendChild(criarCelula(aluno.notaFinal));
+    linha.appendChild(criarCelula(aluno.isAprovado() ? 'Aprovado' : 'Reprovado'));
     linha.appendChild(acoes);
     corpoTabela.appendChild(linha);
   }
